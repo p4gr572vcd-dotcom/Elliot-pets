@@ -218,9 +218,81 @@
     20% { opacity: 1; }
     100% { opacity: 0; transform: translateY(-40px) scale(1.2); }
   }
+
+  body.night {
+    --bg1: #2c2a55;
+    --bg2: #4a3b6b;
+  }
+  body.night .pet-tab { background: rgba(255,255,255,0.18); color: #fdf3e7; }
+  body.night .pet-tab.active { background: rgba(255,255,255,0.85); color: #6b4226; }
+  body.night .pet-name { color: #fdf3e7; text-shadow: 0 2px 0 rgba(0,0,0,0.3); }
+  body.night .cloud { opacity: 0.15; }
+
+  .sky-icon {
+    position: fixed;
+    top: calc(14px + env(safe-area-inset-top));
+    right: calc(16px + env(safe-area-inset-right));
+    font-size: 26px;
+    z-index: 2;
+    opacity: 0.85;
+  }
+
+  .speech-bubble {
+    position: absolute;
+    top: -6%;
+    left: 50%;
+    transform: translateX(-50%) scale(0.5);
+    background: white;
+    color: #6b4226;
+    font-weight: 700;
+    font-size: clamp(15px, 4vw, 19px);
+    padding: 8px 16px;
+    border-radius: 18px;
+    white-space: nowrap;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.08);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 3;
+  }
+  .speech-bubble::after {
+    content: "";
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 8px 7px 0 7px;
+    border-style: solid;
+    border-color: white transparent transparent transparent;
+  }
+  .speech-bubble.show {
+    animation: bubblePop 1.8s ease forwards;
+  }
+  @keyframes bubblePop {
+    0% { opacity: 0; transform: translateX(-50%) scale(0.5) translateY(10px); }
+    15% { opacity: 1; transform: translateX(-50%) scale(1) translateY(0); }
+    80% { opacity: 1; transform: translateX(-50%) scale(1) translateY(0); }
+    100% { opacity: 0; transform: translateX(-50%) scale(0.9) translateY(-6px); }
+  }
+
+  .pet { cursor: pointer; }
+
+  .confetti-piece {
+    position: absolute;
+    top: 10%;
+    left: 50%;
+    font-size: 26px;
+    pointer-events: none;
+    animation: confettiFall 1.6s ease-in forwards;
+  }
+  @keyframes confettiFall {
+    0% { opacity: 1; transform: translate(-50%, 0) rotate(0deg); }
+    100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), 220px) rotate(var(--rot)); }
+  }
 </style>
 </head>
 <body>
+
+<div class="sky-icon" id="skyIcon">☀️</div>
 
 <div class="clouds">
   <div class="cloud" style="top: 8%; animation-delay: 0s;">☁️</div>
@@ -236,6 +308,7 @@
   <div class="pet-name" id="petName">Koala</div>
   <div class="pet-house">
     <div class="zzz" id="zzz">💤</div>
+    <div class="speech-bubble" id="speechBubble"></div>
     <div class="pet" id="pet">🥚</div>
     <div class="floaters" id="floaters"></div>
   </div>
@@ -255,11 +328,29 @@
       name: "Koala",
       storageKey: "elliot-pet-koala-v1",
       moods: { egg: "🥚", baby: "🐨", happy: "🐨", veryHappy: "🐨", sleeping: "😴" },
+      voicePitch: 0.85,
+      phrases: {
+        feed: ["Yum yum!", "Eucalyptus, yay!", "So tasty!"],
+        play: ["Wheee!", "This is fun!", "Yay, let's play!"],
+        sleep: ["Goodnight!", "Sleepy time..."],
+        wake: ["Good morning!", "I'm awake!"],
+        tap: ["Hehe!", "That tickles!", "Hi Elliot!"],
+        celebrate: ["Yay, I'm so happy!", "Best day ever!"],
+      },
     },
     rabbit: {
       name: "Flappie",
       storageKey: "elliot-pet-rabbit-v1",
       moods: { egg: "🥚", baby: "🐰", happy: "🐰", veryHappy: "🐰", sleeping: "😴" },
+      voicePitch: 1.35,
+      phrases: {
+        feed: ["Yummy carrot!", "Nom nom!", "More please!"],
+        play: ["Hop hop hop!", "Wheee, catch me!", "So fun!"],
+        sleep: ["Night night!", "Time to snuggle..."],
+        wake: ["I'm up, I'm up!", "Good morning!"],
+        tap: ["Hihi!", "Hello Elliot!", "Hop hop!"],
+        celebrate: ["Yippee! I love this!", "Hooray!"],
+      },
     },
   };
 
@@ -276,6 +367,56 @@
   const sleepBtn = document.getElementById("sleepBtn");
   const tabKoala = document.getElementById("tabKoala");
   const tabRabbit = document.getElementById("tabRabbit");
+  const speechBubbleEl = document.getElementById("speechBubble");
+  const skyIconEl = document.getElementById("skyIcon");
+
+  function pickRandom(list) {
+    return list[Math.floor(Math.random() * list.length)];
+  }
+
+  function say(phraseKey) {
+    const phrases = activePet().phrases[phraseKey];
+    if (!phrases) return;
+    const text = pickRandom(phrases);
+
+    speechBubbleEl.textContent = text;
+    speechBubbleEl.classList.remove("show");
+    void speechBubbleEl.offsetWidth;
+    speechBubbleEl.classList.add("show");
+
+    if ("speechSynthesis" in window) {
+      try {
+        window.speechSynthesis.cancel();
+        const utter = new SpeechSynthesisUtterance(text);
+        utter.pitch = activePet().voicePitch;
+        utter.rate = 1.05;
+        utter.volume = 0.9;
+        window.speechSynthesis.speak(utter);
+      } catch (e) {}
+    }
+  }
+
+  function updateSky() {
+    const hour = new Date().getHours();
+    const isNight = hour < 7 || hour >= 19;
+    document.body.classList.toggle("night", isNight);
+    skyIconEl.textContent = isNight ? "🌙" : "☀️";
+  }
+
+  function confettiBurst() {
+    const house = document.querySelector(".pet-house");
+    const symbols = ["🎉", "✨", "🎊", "⭐️"];
+    for (let i = 0; i < 10; i++) {
+      const c = document.createElement("div");
+      c.className = "confetti-piece";
+      c.textContent = pickRandom(symbols);
+      c.style.setProperty("--dx", `${(Math.random() - 0.5) * 220}px`);
+      c.style.setProperty("--rot", `${(Math.random() - 0.5) * 360}deg`);
+      c.style.left = (40 + Math.random() * 20) + "%";
+      house.appendChild(c);
+      setTimeout(() => c.remove(), 1700);
+    }
+  }
 
   function activePet() {
     return PETS[activePetId];
@@ -380,9 +521,17 @@
   }
 
   function gainLove(amount) {
+    const wasMaxed = state.love >= 10;
     state.love = Math.min(10, state.love + amount);
     if (!state.hatched && state.love >= 2) {
       state.hatched = true;
+    }
+    if (!wasMaxed && state.love >= 10) {
+      setTimeout(() => {
+        bounce();
+        confettiBurst();
+        say("celebrate");
+      }, 350);
     }
   }
 
@@ -394,6 +543,7 @@
     bounce();
     sparkleBurst();
     floatEmoji("🍎");
+    say("feed");
     save();
     render();
   });
@@ -407,6 +557,7 @@
     sparkleBurst();
     floatEmoji("⚽️");
     popHearts();
+    say("play");
     save();
     render();
   });
@@ -414,9 +565,19 @@
   sleepBtn.addEventListener("click", () => {
     vibrate();
     state.sleeping = !state.sleeping;
+    say(state.sleeping ? "sleep" : "wake");
     save();
     render();
   });
+
+  petEl.addEventListener("click", () => {
+    vibrate();
+    bounce();
+    say(state.sleeping ? "sleep" : "tap");
+  });
+
+  updateSky();
+  setInterval(updateSky, 5 * 60 * 1000);
 
   tabKoala.classList.toggle("active", activePetId === "koala");
   tabRabbit.classList.toggle("active", activePetId === "rabbit");

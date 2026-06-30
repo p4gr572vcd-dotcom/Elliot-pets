@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Elliot's Pet</title>
+<title>Elliot's Pets</title>
 <link rel="apple-touch-icon" href="icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Elliot's Pet">
+<meta name="apple-mobile-web-app-title" content="Elliot's Pets">
 <style>
   :root {
     --bg1: #ffe9c7;
@@ -50,6 +50,31 @@
     justify-content: center;
     position: relative;
     z-index: 1;
+  }
+
+  .pet-tabs {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 10px;
+    z-index: 1;
+  }
+  .pet-tab {
+    border: none;
+    border-radius: 22px;
+    padding: 8px 16px;
+    font-size: clamp(15px, 4vw, 18px);
+    font-weight: 700;
+    background: rgba(255,255,255,0.55);
+    color: #6b4226;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 3px 0 rgba(0,0,0,0.08);
+  }
+  .pet-tab .emoji { font-size: 1.3em; }
+  .pet-tab.active {
+    background: white;
+    box-shadow: 0 3px 0 rgba(0,0,0,0.12), 0 0 0 3px var(--accent);
   }
 
   .pet-name {
@@ -204,7 +229,11 @@
 </div>
 
 <div class="stage">
-  <div class="pet-name">Elliot's Pet</div>
+  <div class="pet-tabs">
+    <button class="pet-tab" id="tabKoala"><span class="emoji">🐨</span>Koala</button>
+    <button class="pet-tab" id="tabRabbit"><span class="emoji">🐰</span>Flappie</button>
+  </div>
+  <div class="pet-name" id="petName">Koala</div>
   <div class="pet-house">
     <div class="zzz" id="zzz">💤</div>
     <div class="pet" id="pet">🥚</div>
@@ -221,45 +250,71 @@
 
 <script>
 (function () {
-  const STORAGE_KEY = "elliot-pet-v1";
-
-  const MOODS = {
-    egg: "🥚",
-    baby: "🐣",
-    happy: "🐥",
-    veryHappy: "🐤",
-    sleeping: "😴",
+  const PETS = {
+    koala: {
+      name: "Koala",
+      storageKey: "elliot-pet-koala-v1",
+      moods: { egg: "🥚", baby: "🐨", happy: "🐨", veryHappy: "🐨", sleeping: "😴" },
+    },
+    rabbit: {
+      name: "Flappie",
+      storageKey: "elliot-pet-rabbit-v1",
+      moods: { egg: "🥚", baby: "🐰", happy: "🐰", veryHappy: "🐰", sleeping: "😴" },
+    },
   };
 
+  let activePetId = localStorage.getItem("elliot-active-pet") || "koala";
   let state = load();
 
   const petEl = document.getElementById("pet");
+  const petNameEl = document.getElementById("petName");
   const heartsEl = document.getElementById("hearts");
   const floatersEl = document.getElementById("floaters");
   const zzzEl = document.getElementById("zzz");
   const feedBtn = document.getElementById("feedBtn");
   const playBtn = document.getElementById("playBtn");
   const sleepBtn = document.getElementById("sleepBtn");
+  const tabKoala = document.getElementById("tabKoala");
+  const tabRabbit = document.getElementById("tabRabbit");
+
+  function activePet() {
+    return PETS[activePetId];
+  }
 
   function load() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(PETS[activePetId].storageKey);
       if (raw) return JSON.parse(raw);
     } catch (e) {}
     return { love: 1, hatched: false, sleeping: false, feeds: 0, plays: 0 };
   }
 
   function save() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    localStorage.setItem(PETS[activePetId].storageKey, JSON.stringify(state));
+    localStorage.setItem("elliot-active-pet", activePetId);
   }
 
   function currentEmoji() {
-    if (state.sleeping) return MOODS.sleeping;
-    if (!state.hatched) return MOODS.egg;
-    if (state.love >= 8) return MOODS.veryHappy;
-    if (state.love >= 4) return MOODS.happy;
-    return MOODS.baby;
+    const moods = activePet().moods;
+    if (state.sleeping) return moods.sleeping;
+    if (!state.hatched) return moods.egg;
+    if (state.love >= 8) return moods.veryHappy;
+    if (state.love >= 4) return moods.happy;
+    return moods.baby;
   }
+
+  function switchPet(petId) {
+    if (petId === activePetId) return;
+    activePetId = petId;
+    state = load();
+    tabKoala.classList.toggle("active", petId === "koala");
+    tabRabbit.classList.toggle("active", petId === "rabbit");
+    petNameEl.textContent = activePet().name;
+    render();
+  }
+
+  tabKoala.addEventListener("click", () => switchPet("koala"));
+  tabRabbit.addEventListener("click", () => switchPet("rabbit"));
 
   function renderHearts() {
     heartsEl.innerHTML = "";
@@ -363,6 +418,9 @@
     render();
   });
 
+  tabKoala.classList.toggle("active", activePetId === "koala");
+  tabRabbit.classList.toggle("active", activePetId === "rabbit");
+  petNameEl.textContent = activePet().name;
   render();
 })();
 </script>

@@ -330,12 +330,12 @@
       moods: { egg: "🥚", baby: "🐨", happy: "🐨", veryHappy: "🐨", sleeping: "😴" },
       voicePitch: 0.85,
       phrases: {
-        feed: ["Yum yum!", "Eucalyptus, yay!", "So tasty!"],
-        play: ["Wheee!", "This is fun!", "Yay, let's play!"],
-        sleep: ["Goodnight!", "Sleepy time..."],
-        wake: ["Good morning!", "I'm awake!"],
-        tap: ["Hehe!", "That tickles!", "Hi Elliot!"],
-        celebrate: ["Yay, I'm so happy!", "Best day ever!"],
+        feed: ["Mmm, lekker!", "Eucalyptus, jippie!", "Wat lekker zeg!"],
+        play: ["Wieee!", "Dit is leuk!", "Joepie, laten we spelen!"],
+        sleep: ["Welterusten!", "Tijd om te slapen..."],
+        wake: ["Goedemorgen!", "Ik ben wakker!"],
+        tap: ["Hihi!", "Dat kietelt!", "Hoi Elliot!"],
+        celebrate: ["Joepie, ik ben zo blij!", "Beste dag ooit!"],
       },
     },
     rabbit: {
@@ -344,12 +344,12 @@
       moods: { egg: "🥚", baby: "🐰", happy: "🐰", veryHappy: "🐰", sleeping: "😴" },
       voicePitch: 1.35,
       phrases: {
-        feed: ["Yummy carrot!", "Nom nom!", "More please!"],
-        play: ["Hop hop hop!", "Wheee, catch me!", "So fun!"],
-        sleep: ["Night night!", "Time to snuggle..."],
-        wake: ["I'm up, I'm up!", "Good morning!"],
-        tap: ["Hihi!", "Hello Elliot!", "Hop hop!"],
-        celebrate: ["Yippee! I love this!", "Hooray!"],
+        feed: ["Lekkere wortel!", "Mmm mmm!", "Nog een beetje graag!"],
+        play: ["Hop hop hop!", "Wieee, vang me!", "Wat leuk!"],
+        sleep: ["Welterusten!", "Tijd om te knuffelen..."],
+        wake: ["Ik ben wakker, ik ben wakker!", "Goedemorgen!"],
+        tap: ["Hihi!", "Hoi Elliot!", "Hop hop!"],
+        celebrate: ["Jippie, ik vind dit zo leuk!", "Hoera!"],
       },
     },
   };
@@ -388,6 +388,7 @@
       try {
         window.speechSynthesis.cancel();
         const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = "nl-NL";
         utter.pitch = activePet().voicePitch;
         utter.rate = 1.05;
         utter.volume = 0.9;
